@@ -8,9 +8,14 @@ import logging
 from PIL import Image
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-LIBDIR = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'lib')
-if os.path.exists(LIBDIR):
-    sys.path.append(LIBDIR)
+LIBDIR_CANDIDATES = [
+    os.path.join(HERE, 'lib'),
+    os.path.join(os.path.dirname(os.path.dirname(HERE)), 'lib'),
+]
+for libdir in LIBDIR_CANDIDATES:
+    if os.path.exists(libdir):
+        sys.path.append(libdir)
+        break
 
 from waveshare_epd import epd2in15b
 
