@@ -17,7 +17,7 @@ for libdir in LIBDIR_CANDIDATES:
         sys.path.append(libdir)
         break
 
-from waveshare_epd import epd2in15b
+from waveshare_epd import epd5in83_V2
 
 IMAGE_NAME = 'departures_qrp.png'
 
@@ -54,38 +54,9 @@ def _letterbox(img, size):
     return canvas
 
 
-def _is_redish(r, g, b):
-    if r > 180 and g > 180 and b < 120:
-        return True
-    if r > 160 and g < 100 and b < 100:
-        return True
-    if r > 180 and g < 140 and b < 140 and (r - max(g, b)) > 40:
-        return True
-    return False
-
-
-def _is_blackish(r, g, b):
-    return (r + g + b) < 3 * 100
-
-
-def _to_epd_layers(img, size):
+def _to_epd_bw(img, size):
     img = _letterbox(img, size)
-    black = Image.new('1', size, 255)
-    red = Image.new('1', size, 255)
-
-    src = img.load()
-    blk = black.load()
-    rd = red.load()
-
-    for y in range(size[1]):
-        for x in range(size[0]):
-            r, g, b = src[x, y]
-            if _is_redish(r, g, b):
-                rd[x, y] = 0
-            elif _is_blackish(r, g, b):
-                blk[x, y] = 0
-
-    return black, red
+    return img.convert('1')
 
 
 def main():
@@ -96,17 +67,17 @@ def main():
         raise FileNotFoundError('PNG not found: %s' % image_path)
 
     logging.info('init and clear')
-    epd = epd2in15b.EPD()
+    epd = epd5in83_V2.EPD()
     epd.init()
     epd.Clear()
     time.sleep(1)
 
     img = _load_image(image_path)
     target_size = _choose_target_size(epd, img)
-    black, red = _to_epd_layers(img, target_size)
+    bw_image = _to_epd_bw(img, target_size)
 
     logging.info('displaying %s', IMAGE_NAME)
-    epd.display(epd.getbuffer(black), epd.getbuffer(red))
+    epd.display(epd.getbuffer(bw_image))
     time.sleep(2)
 
     logging.info('sleep')
@@ -119,7 +90,7 @@ if __name__ == '__main__':
     except Exception:
         logging.exception('failed')
         try:
-            epd2in15b.epdconfig.module_exit(cleanup=True)
+            epd5in83_V2.epdconfig.module_exit(cleanup=True)
         except Exception:
             pass
         raise
